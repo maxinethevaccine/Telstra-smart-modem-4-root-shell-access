@@ -84,29 +84,6 @@ uci commit tr69
 /etc/init.d/5g-osl-tr69-manager disable
 ```
 
-### GUI Unlock
-Two layers of feature flags control menu visibility:Edit These dont work dont use these
-
-1. **Dynamic features** (`/etc/rest-server/template/telstra/get_features.tpl`) — JSON template served by the REST API. Change all `"enable": false` to `"enable": true`.
-
-2. **Static features** (hardcoded in `/www/main.*.js`) — 6 features disabled in the Angular bundle. Patch them and bind-mount over the read-only squashfs:
-   ```sh
-   cp /www/main.*.js /overlay/www-patches/main.js
-   sed -i 's/myBoxDeviceInfoDHCPLeases:!1/myBoxDeviceInfoDHCPLeases:!0/g' /overlay/www-patches/main.js
-   sed -i 's/myBoxBridgeMode:!1/myBoxBridgeMode:!0/g' /overlay/www-patches/main.js
-   sed -i 's/myBoxEcoModeAdvanced:!1/myBoxEcoModeAdvanced:!0/g' /overlay/www-patches/main.js
-   sed -i 's/internetConnectivityBasicDnsIpv4:!1/internetConnectivityBasicDnsIpv4:!0/g' /overlay/www-patches/main.js
-   sed -i 's/internetConnectivityBasicDnsIpv6:!1/internetConnectivityBasicDnsIpv6:!0/g' /overlay/www-patches/main.js
-   sed -i 's/gpon:!1/gpon:!0/g' /overlay/www-patches/main.js
-   mount --bind /overlay/www-patches/main.js /www/main.*.js
-   ```
-
-3. **Admin role** — Change from `end-user` to `internal`:
-   ```sh
-   uci set omdw_users.admin.role=internal
-   uci commit omdw_users
-   ```
-
 ### UART Console
 ```sh
 # Uncomment console login

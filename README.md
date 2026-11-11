@@ -1,6 +1,7 @@
 # tsm4-root
 
-Root exploit and firmware dump for the **Telstra Smart Modem 4** (Sagemcom F5988TA "Mongoose").
+Root exploit and firmware dump for the **Telstra Smart Modem 4** (Sagemcom F5988TA "Mongoose"). 
+Edit: This is firmware this was tested on this may be patched in the future
 
 ## Device Info
 

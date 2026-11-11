@@ -23,7 +23,7 @@ The TR-069/CWMP client (`tr69d v1.32.5`) validates the ACS server's TLS certific
 
 The UCI config confirms this: `tr69.settings.ssl_cn_verification='false'`
 
-This allows a man-in-the-middle on the WAN interface to impersonate Telstra's ACS and send arbitrary TR-069 RPCs to the modem.
+This allows a man-in-the-middle on the WAN interface to impersonate Telstra's ACS and send arbitrary TR-069 RPCs to the modem. Sorta-like the old tch-exploit on the gen 3 and gen 2
 
 ## Exploit Chain
 

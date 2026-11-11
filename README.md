@@ -85,7 +85,7 @@ uci commit tr69
 ```
 
 ### GUI Unlock
-Two layers of feature flags control menu visibility:
+Two layers of feature flags control menu visibility:Edit These dont work dont use these
 
 1. **Dynamic features** (`/etc/rest-server/template/telstra/get_features.tpl`) — JSON template served by the REST API. Change all `"enable": false` to `"enable": true`.
 

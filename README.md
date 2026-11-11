@@ -62,7 +62,7 @@ The exploit runs a rogue ACS server on the modem's WAN interface that:
 
 The Mac's en8 adapter connects directly to the modem's WAN port. The rogue ACS runs DHCP (port 67), DNS (port 53), HTTP (port 7547), and HTTPS (ports 7548 + 443).
 
-## Post-Root: De-Telstra & GUI Unlock
+## Post-Root: De-Telstra & GUI Unlock (Edit this is only experimental so things can break since this is only recently discovered )
 
 Once rooted, the following changes make the modem independently usable:
 

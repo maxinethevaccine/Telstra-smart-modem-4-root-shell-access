@@ -1,0 +1,43 @@
+Telstra Smart Modem 4 (Sagemcom F5988TA) — eMMC Partition Map
+=============================================================
+
+Device: /dev/mmcblk0 (7.5GB eMMC)
+Partition table: GPT
+A/B update scheme: partitions with _a/_b suffixes
+
+Boot Chain:
+  mmcblk0p10  xbl_a       3.5M   Qualcomm XBL (eXtensible Boot Loader)
+  mmcblk0p11  xbl_b       3.5M   XBL backup slot
+  mmcblk0p12  tz_a        4.0M   TrustZone / Secure World firmware
+  mmcblk0p13  tz_b        4.0M   TrustZone backup slot
+  mmcblk0p34  qhee_a      2.0M   Qualcomm Hypervisor Execution Environment
+  mmcblk0p35  qhee_b      2.0M   QHEE backup slot
+  mmcblk0p36  abl_a       1.0M   Android Boot Loader
+  mmcblk0p37  abl_b       1.0M   ABL backup slot
+  mmcblk0p38  uefi_a      5.0M   UEFI firmware
+  mmcblk0p39  uefi_b      5.0M   UEFI backup slot
+  mmcblk0p49  keymaster   512K   Keymaster (hardware crypto key management)
+
+System:
+  mmcblk0p55  modem       300M   Cellular/WiFi firmware (SDX75 5G + QCN9224 WiFi 7)
+  mmcblk0p57  system_a    250M   Root filesystem (contains squashfs @ sector offset 38192)
+  mmcblk0p58  system_b    250M   System backup slot
+  mmcblk0p59  systemrw    ~2GB   Writable overlay (dm-crypt aes-xts-plain64, ext4)
+  mmcblk0p64  persist     30M    Persistent config (ext4)
+
+dm-crypt mappings:
+  gsdf-rootfs:        linear, mmcblk0p57 @ offset 38192 sectors (NOT encrypted)
+  decrypted_systemrw: aes-xts-plain64, mmcblk0p59
+
+Rootfs details:
+  Type: squashfs v4.0, xz compressed
+  Size: ~81MB (8060 inodes)
+  Mount: / (read-only)
+  Overlay: /overlay via decrypted_systemrw (read-write)
+  /etc overlay: overlay_etc (lowerdir=/etc, upperdir=/overlay/overlayfs/etc-upper)
+
+Dump commands (run as root on modem via SSH):
+  dd if=/dev/mmcblk0p57 bs=1M 2>/dev/null > system_p57.img
+  dd if=/dev/mapper/gsdf-rootfs bs=1M 2>/dev/null > rootfs.squashfs
+  dd if=/dev/mmcblk0p10 bs=1M 2>/dev/null > xbl_p10.img
+  # etc.

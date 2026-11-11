@@ -1,0 +1,23 @@
+# Private keys
+sm4_id_rsa
+*.pem
+*.key
+
+# Device-specific config dumps (contain WiFi keys, serial numbers, password hashes)
+firmware/overlay.tar.gz
+firmware/overlay_extracted/
+firmware/persistent_p64.img
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
+recon.log
+
+# State files
+xsession_state.json
+
+# OS files
+.DS_Store
+Thumbs.db

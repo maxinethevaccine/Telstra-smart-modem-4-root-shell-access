@@ -1,7 +1,8 @@
 # tsm4-root
 
-Root exploit and firmware dump for the **Telstra Smart Modem 4** (Sagemcom F5988TA "Mongoose"). 
-Edit: This is firmware this was tested on this may be patched in the future
+Root exploit for the **Telstra Smart Modem 4** (Sagemcom F5988TA "Mongoose").
+
+> **Note:** Tested on firmware SGPE1TL0104AA-1.0.32A. This may be patched in future firmware versions.
 
 ## Device Info
 
@@ -24,17 +25,17 @@ The TR-069/CWMP client (`tr69d v1.32.5`) validates the ACS server's TLS certific
 
 The UCI config confirms this: `tr69.settings.ssl_cn_verification='false'`
 
-This allows a man-in-the-middle on the WAN interface to impersonate Telstra's ACS and send arbitrary TR-069 RPCs to the modem. Sorta-like the old tch-exploit on the gen 3 and gen 2
+This allows a man-in-the-middle on the WAN interface to impersonate Telstra's ACS and send arbitrary TR-069 RPCs to the modem.
 
 ## Exploit Chain
 
 The exploit runs a rogue ACS server on the modem's WAN interface that:
 
-1. **DHCP + DNS** — Assigns the modem a WAN IP and resolves DNS
-2. **TLS interception** — Serves a valid Let's Encrypt certificate (any domain)
+1. **DHCP + DNS** — Assigns the modem a WAN IP and resolves all DNS to our server
+2. **TLS interception** — Serves a valid Let's Encrypt certificate (any domain — the modem doesn't check hostname)
 3. **TR-069 session hijack** — Responds to the modem's CWMP Inform with RPCs
 4. **SetParameterValues** — Sets `X_TELSTRA_Debug.SshdEnabled = true` (standalone SPV, Status=0)
-5. **SetParameterValues** — Sets `X_TELSTRA_Debug.SshdAllowedIPList = 0.0.0.0/0` (standalone SPV, Status=0)
+5. **SetParameterValues** — Sets `X_TELSTRA_Debug.SshdAllowedIPList` (standalone SPV, Status=0)
 6. **SSH access** — Dropbear starts on port 22 with `root` (no password by default)
 
 ### Key Findings
@@ -53,7 +54,16 @@ The exploit runs a rogue ACS server on the modem's WAN interface that:
 - TraceRoute command injection — DiagState=None
 - DebugFileReporting — FileAvailable=false
 
-## Network Setup
+## Usage
+
+### Requirements
+
+- macOS/Linux host with a USB Ethernet adapter
+- Node.js 18+
+- A valid TLS certificate (Let's Encrypt works — any domain, the modem doesn't check)
+- Direct ethernet connection to the modem's **WAN port**
+
+### Network Setup
 
 ```
 [Mac en8 USB Ethernet] ---- WAN ----> [SM4 eth1]
@@ -61,51 +71,48 @@ The exploit runs a rogue ACS server on the modem's WAN interface that:
    (rogue ACS)                          (target modem)
 ```
 
-The Mac's en8 adapter connects directly to the modem's WAN port. The rogue ACS runs DHCP (port 67), DNS (port 53), HTTP (port 7547), and HTTPS (ports 7548 + 443).
+### Running the Exploit
 
-## Post-Root: De-Telstra & GUI Unlock (Edit this is only experimental so things can break since this is only recently discovered )
-
-Once rooted, the following changes make the modem independently usable:
-
-### Persistence
 ```sh
-# Disable ssh-osu (stops it from killing dropbear on boot)
-/etc/init.d/ssh-osu disable
-
-# Set root password
-echo -e "yourpassword\nyourpassword" | passwd root
-
-# TR-069 disabled permanently
-uci set tr69.mgmt_srv.enable=false
-uci set tr69.periodic_inform.enable=false
-uci set tr69.conn_request.enable=false
-uci commit tr69
-/etc/init.d/tr69-osu disable
-/etc/init.d/5g-osl-tr69-manager disable
+git clone https://github.com/maxinethevaccine/tsm4-root.git
+cd tsm4-root
+chmod +x root.sh
+./root.sh
 ```
 
-### UART Console
+The script will ask you to choose a mode:
+
+| Mode | SSH Access | SshdAllowedIPList |
+|------|-----------|-------------------|
+| **1 — LAN** | LAN side only | `192.168.0.0/24` |
+| **2 — WAN** | Any IP (LAN + WAN) | `0.0.0.0/0` |
+
+> **WAN mode warning:** Exposes SSH to the internet. TR-069 (remote management) remains active and your ISP can push config changes or disable SSH at any time. TR-069 behaviour varies by ISP and firmware version — do not blindly disable it without understanding what it does on your specific device. Disabling it incorrectly can break WAN connectivity or brick the modem.
+
+After the exploit reports success:
+
 ```sh
-# Uncomment console login
-sed -i 's/^#::askconsole/::askconsole/' /etc/inittab
-uci set system.@system[0].ttylogin=1
-uci commit system
-# 115200 8N1 on ttyMSM0
+# Connect (root has no password by default)
+ssh root@192.168.0.1
+
+# Set a password immediately
+passwd
 ```
 
-### rc.local
+### TLS Certificate Setup
+
+Place your Let's Encrypt cert files in `exploit/`:
+- `cert.key.pem` — Private key
+- `real_cert.pem` — Full chain certificate
+
+If not found, a self-signed cert is generated automatically. The self-signed cert will fail because the modem validates the chain of trust — it just doesn't validate the hostname.
+
+### Overriding the Interface
+
+If your USB Ethernet adapter isn't `en8`:
+
 ```sh
-cat > /etc/rc.local << 'EOF'
-sleep 15
-ip route del default 2>/dev/null
-ip route add default dev rmnet_data0 metric 10 2>/dev/null
-echo "nameserver 8.8.8.8" > /tmp/resolv.conf.d/resolv.conf.auto
-echo "nameserver 1.1.1.1" >> /tmp/resolv.conf.d/resolv.conf.auto
-killall tr69d tr69-osu 5g-osl-tr69-manager 2>/dev/null
-MAINJS=$(ls /www/main.*.js)
-[ -f /overlay/www-patches/main.js ] && mount --bind /overlay/www-patches/main.js "$MAINJS"
-exit 0
-EOF
+SM4_IFACE=en9 ./root.sh
 ```
 
 ## Firmware Dumps
@@ -144,31 +151,22 @@ mmcblk0p64  persist   (persistent config)
 
 ```
 tsm4-root/
+├── root.sh                        # Wrapper script (run this)
 ├── exploit/
-│   ├── recon.js                    # Rogue ACS rig (DHCP+DNS+HTTPS+CWMP)
-│   ├── sm4_id_rsa.pub              # SSH public key for modem access
-│   └── patches/
-│       ├── get_features_original.tpl   # Original GUI feature flags
-│       └── get_features_unlocked.tpl   # All features enabled
-├── firmware/                       # Dumped partition images
+│   ├── recon.js                   # Rogue ACS (DHCP+DNS+HTTPS+CWMP)
+│   └── sm4_id_rsa.pub             # SSH public key for modem access
+├── firmware/                      # Dumped partition images
 │   ├── rootfs.squashfs
 │   ├── boot.img
-│   ├── modem_p55.img.part_*        # Split for GitHub (reassemble with cat)
-│   ├── reassemble.sh               # Script to reassemble split images
+│   ├── modem_p55.img.part_*       # Split for GitHub (reassemble with cat)
+│   ├── reassemble.sh              # Script to reassemble split images
 │   ├── SHA256SUMS
 │   └── ...
 ├── docs/
 │   └── partition_map.txt
-├── LICENSE                         # GPL-3.0
+├── LICENSE                        # GPL-3.0
 └── README.md
 ```
-
-## Requirements
-
-- macOS/Linux host with a USB Ethernet adapter
-- Node.js 18+ (for the rogue ACS)
-- A valid TLS certificate (Let's Encrypt works)
-- Direct ethernet connection to the modem's WAN port
 
 ## Disclaimer
 

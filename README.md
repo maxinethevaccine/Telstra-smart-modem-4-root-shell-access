@@ -4,19 +4,32 @@ Root shell exploit for the **Telstra Smart Modem 4** (Sagemcom F5988TA).
 
 Exploits **CWE-295** — the modem validates the TLS certificate chain but **not** the hostname (`ssl_cn_verification='false'`). By impersonating the ISP's ACS (TR-069 management server) during boot, the exploit enables SSH root access via CWMP SetParameterValues.
 
-## Requirements
+## Modem Specifications
 
-- **TLS certificate** — a real CA-signed cert (self-signed won't work). The modem trusts ISRG Root X1, so a free Let's Encrypt cert works. Run `get-cert.sh` to obtain one.
-- **Ethernet cable** — connect your computer directly to the modem's **RED WAN port**
-- **Admin/root privileges** — the exploit binds to privileged ports (53, 67, 123, 443)
+| | |
+|---|---|
+| **Model** | Sagemcom F5988TA |
+| **Firmware** | OpenWrt 22.03.5 |
+| **Kernel** | Linux 5.15.149 aarch64 |
+| **SoC** | Qualcomm SDX75 (5G) |
+| **Vulnerability** | CWE-295 — Improper Certificate Validation |
+| **ACS Transport** | HTTPS with ISRG Root X1 in trust store |
 
-## Files
+## Download
+
+Grab the latest release from the [Releases](../../releases) page. It includes:
 
 | File | Description |
 |------|-------------|
 | `exploit.py` | Pure Python exploit — works on **Windows, macOS, and Linux** with zero dependencies |
 | `exploit.sh` | Bash exploit — uses dnsmasq, works on **macOS and Linux** |
 | `get-cert.sh` | Helper script to obtain a free Let's Encrypt certificate |
+
+## Requirements
+
+- **TLS certificate** — a real CA-signed cert (self-signed won't work). The modem trusts ISRG Root X1, so a free Let's Encrypt cert works. Run `get-cert.sh` to obtain one.
+- **Ethernet cable** — connect your computer directly to the modem's **RED WAN port**
+- **Admin/root privileges** — the exploit binds to privileged ports (53, 67, 123, 443)
 
 ## Quick Start
 

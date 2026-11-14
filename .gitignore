@@ -1,0 +1,14 @@
+cert.pem
+key.pem
+fullchain.pem
+privkey.pem
+certificate.pem
+private.pem
+*.pem
+*.log
+*.tar.zst
+*.tar.gz
+*.img
+*.squashfs
+__pycache__/
+.DS_Store

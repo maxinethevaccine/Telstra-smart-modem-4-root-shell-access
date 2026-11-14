@@ -120,4 +120,4 @@ exploit.py [-h] [-i IFACE] [-c CERT] [-k KEY] [-s SUBNET] [-p PREFIX] [-m MAC] [
 
 ## License
 
-MIT
+GPL-3.0 — see [LICENSE](LICENSE)
